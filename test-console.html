@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EryAI Engine PoC - Test Console</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      background: #0d1117;
+      color: #c9d1d9;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: linear-gradient(135deg, #238636 0%, #1f6feb 100%);
+      border-radius: 12px;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+      color: white;
+    }
+    
+    .header .subtitle {
+      font-size: 12px;
+      opacity: 0.9;
+      color: white;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    @media (max-width: 900px) {
+      .container { grid-template-columns: 1fr; }
+    }
+    
+    .panel {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .panel-header {
+      background: #21262d;
+      padding: 12px 16px;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .panel-header h2 {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .panel-body {
+      padding: 16px;
+    }
+    
+    .config-row {
+      margin-bottom: 12px;
+    }
+    
+    .config-row label {
+      display: block;
+      font-size: 11px;
+      color: #8b949e;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+    
+    .config-row input, .config-row select {
+      width: 100%;
+      padding: 8px 12px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    
+    .config-row input:focus, .config-row select:focus {
+      outline: none;
+      border-color: #1f6feb;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #238636;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #2ea043;
+    }
+    
+    .btn-secondary {
+      background: #21262d;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+    }
+    
+    .btn-secondary:hover {
+      background: #30363d;
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    
+    .metric {
+      background: #0d1117;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .metric-label {
+      font-size: 10px;
+      color: #8b949e;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    
+    .metric-value {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    
+    .metric-value.good { color: #238636; }
+    .metric-value.warning { color: #d29922; }
+    .metric-value.bad { color: #f85149; }
+    
+    .chat-area {
+      height: 300px;
+      overflow-y: auto;
+      background: #0d1117;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .message {
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .message.user {
+      background: #1f6feb;
+      color: white;
+      margin-left: 20%;
+    }
+    
+    .message.assistant {
+      background: #21262d;
+      margin-right: 20%;
+    }
+    
+    .message.system {
+      background: #30363d;
+      color: #8b949e;
+      font-size: 11px;
+      text-align: center;
+      margin: 8px 0;
+    }
+    
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .input-row input {
+      flex: 1;
+    }
+    
+    .log-area {
+      height: 200px;
+      overflow-y: auto;
+      background: #0d1117;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    
+    .log-entry {
+      margin-bottom: 4px;
+    }
+    
+    .log-entry.info { color: #58a6ff; }
+    .log-entry.success { color: #3fb950; }
+    .log-entry.error { color: #f85149; }
+    .log-entry.warning { color: #d29922; }
+    
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .status-badge.healthy { background: #238636; color: white; }
+    .status-badge.unhealthy { background: #f85149; color: white; }
+    .status-badge.unknown { background: #30363d; color: #8b949e; }
+    
+    .full-width { grid-column: 1 / -1; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🚀 EryAI Engine PoC - Test Console</h1>
+    <div class="subtitle">EU-Sovereign Stack: Scaleway 🇫🇷 + Mistral 🇫🇷</div>
+  </div>
+
+  <div class="container">
+    <!-- Config Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>⚙️ Configuration</h2>
+        <span class="status-badge unknown" id="healthStatus">Unknown</span>
+      </div>
+      <div class="panel-body">
+        <div class="config-row">
+          <label>API URL</label>
+          <input type="text" id="apiUrl" value="http://localhost:8080" />
+        </div>
+        <div class="config-row">
+          <label>Customer</label>
+          <select id="customerSlug">
+            <option value="bella-italia">🍝 Bella Italia (Sofia)</option>
+            <option value="anderssons-verkstad">🔧 Anderssons Verkstad (Marcus)</option>
+            <option value="eldercare-pilot">👵 ElderCare (Astrid/Ivar)</option>
+          </select>
+        </div>
+        <div class="config-row" id="companionRow" style="display: none;">
+          <label>Companion (ElderCare only)</label>
+          <select id="companion">
+            <option value="">Default</option>
+            <option value="astrid">👵 Astrid</option>
+            <option value="ivar">👴 Ivar</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button class="btn btn-primary" onclick="checkHealth()">🔍 Health Check</button>
+          <button class="btn btn-secondary" onclick="testGreeting()">👋 Test Greeting</button>
+          <button class="btn btn-secondary" onclick="clearSession()">🗑️ Clear Session</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metrics Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>📊 PoC Metrics</h2>
+      </div>
+      <div class="panel-body">
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-label">TTFT</div>
+            <div class="metric-value" id="metricTtft">-</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">AI Time</div>
+            <div class="metric-value" id="metricAi">-</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">DB Time</div>
+            <div class="metric-value" id="metricDb">-</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Total</div>
+            <div class="metric-value" id="metricTotal">-</div>
+          </div>
+        </div>
+        <div style="font-size: 11px; color: #8b949e;">
+          <strong>Targets:</strong> TTFT &lt;500ms, DB &lt;50ms, Total &lt;2000ms
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>💬 Chat Test</h2>
+        <span id="sessionInfo" style="font-size: 11px; color: #8b949e;">No session</span>
+      </div>
+      <div class="panel-body">
+        <div class="chat-area" id="chatArea">
+          <div class="message system">Select a customer and start chatting</div>
+        </div>
+        <div class="input-row">
+          <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendMessage()" />
+          <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>📋 Request Log</h2>
+        <button class="btn btn-secondary" onclick="clearLog()" style="padding: 4px 8px; font-size: 10px;">Clear</button>
+      </div>
+      <div class="panel-body">
+        <div class="log-area" id="logArea"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let sessionId = null;
+    
+    const apiUrlInput = document.getElementById('apiUrl');
+    const customerSlug = document.getElementById('customerSlug');
+    const companionSelect = document.getElementById('companion');
+    const companionRow = document.getElementById('companionRow');
+    const chatArea = document.getElementById('chatArea');
+    const messageInput = document.getElementById('messageInput');
+    const logArea = document.getElementById('logArea');
+    const healthStatus = document.getElementById('healthStatus');
+    const sessionInfo = document.getElementById('sessionInfo');
+
+    // Show/hide companion selector
+    customerSlug.addEventListener('change', () => {
+      companionRow.style.display = customerSlug.value === 'eldercare-pilot' ? 'block' : 'none';
+      clearSession();
+    });
+
+    function getApiUrl() {
+      return apiUrlInput.value.replace(/\/$/, '');
+    }
+
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logArea.appendChild(entry);
+      logArea.scrollTop = logArea.scrollHeight;
+    }
+
+    function clearLog() {
+      logArea.innerHTML = '';
+    }
+
+    function updateMetrics(metrics) {
+      if (!metrics) return;
+      
+      const ttft = document.getElementById('metricTtft');
+      const ai = document.getElementById('metricAi');
+      const db = document.getElementById('metricDb');
+      const total = document.getElementById('metricTotal');
+
+      ttft.textContent = `${metrics.ttft || 0}ms`;
+      ttft.className = `metric-value ${getMetricClass(metrics.ttft, 500, 1500)}`;
+
+      ai.textContent = `${metrics.aiTime || 0}ms`;
+      ai.className = `metric-value ${getMetricClass(metrics.aiTime, 1000, 2000)}`;
+
+      db.textContent = `${metrics.dbTime || 0}ms`;
+      db.className = `metric-value ${getMetricClass(metrics.dbTime, 50, 100)}`;
+
+      total.textContent = `${metrics.totalTime || 0}ms`;
+      total.className = `metric-value ${getMetricClass(metrics.totalTime, 2000, 3000)}`;
+    }
+
+    function getMetricClass(value, good, bad) {
+      if (!value) return '';
+      if (value <= good) return 'good';
+      if (value >= bad) return 'bad';
+      return 'warning';
+    }
+
+    function addChatMessage(text, role) {
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+      div.textContent = text;
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function clearSession() {
+      sessionId = null;
+      chatArea.innerHTML = '<div class="message system">Session cleared. Start a new conversation.</div>';
+      sessionInfo.textContent = 'No session';
+      log('Session cleared', 'info');
+    }
+
+    async function checkHealth() {
+      log('Checking health...', 'info');
+      try {
+        const response = await fetch(`${getApiUrl()}/health`);
+        const data = await response.json();
+        
+        healthStatus.textContent = data.ok ? 'Healthy' : 'Unhealthy';
+        healthStatus.className = `status-badge ${data.ok ? 'healthy' : 'unhealthy'}`;
+        
+        log(`Health: ${data.ok ? '✅ OK' : '❌ FAIL'}`, data.ok ? 'success' : 'error');
+        log(`  DB: ${data.components?.database?.latency || 'N/A'}ms`, 'info');
+        log(`  Mistral: ${data.components?.mistral?.latency || 'N/A'}ms`, 'info');
+        
+        if (data.components?.database?.schemaInitialized) {
+          log('  Schema initialized with demo data', 'success');
+        }
+      } catch (error) {
+        healthStatus.textContent = 'Error';
+        healthStatus.className = 'status-badge unhealthy';
+        log(`Health check failed: ${error.message}`, 'error');
+      }
+    }
+
+    async function testGreeting() {
+      const slug = customerSlug.value;
+      log(`Fetching greeting for ${slug}...`, 'info');
+      
+      try {
+        const response = await fetch(`${getApiUrl()}/api/greeting?slug=${slug}`);
+        const data = await response.json();
+        
+        if (data.error) {
+          log(`Error: ${data.error}`, 'error');
+        } else {
+          log(`Greeting: "${data.greeting}"`, 'success');
+          log(`AI Name: ${data.aiName}`, 'info');
+          addChatMessage(data.greeting, 'assistant');
+        }
+      } catch (error) {
+        log(`Greeting failed: ${error.message}`, 'error');
+      }
+    }
+
+    async function sendMessage() {
+      const message = messageInput.value.trim();
+      if (!message) return;
+      
+      messageInput.value = '';
+      addChatMessage(message, 'user');
+      
+      const slug = customerSlug.value;
+      const companion = slug === 'eldercare-pilot' ? companionSelect.value : '';
+      
+      log(`Sending to ${slug}${companion ? ` (${companion})` : ''}...`, 'info');
+      
+      document.getElementById('sendBtn').disabled = true;
+      
+      try {
+        const body = {
+          prompt: message,
+          slug,
+          sessionId
+        };
+        
+        if (companion) {
+          body.companion = companion;
+        }
+        
+        const startTime = Date.now();
+        const response = await fetch(`${getApiUrl()}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        
+        const data = await response.json();
+        const clientTime = Date.now() - startTime;
+        
+        if (data.error) {
+          log(`Error: ${data.error}`, 'error');
+          addChatMessage(`Error: ${data.error}`, 'system');
+        } else {
+          sessionId = data.sessionId;
+          sessionInfo.textContent = `Session: ${sessionId.substring(0, 8)}...`;
+          
+          addChatMessage(data.response, 'assistant');
+          
+          const metrics = data._metrics || {};
+          metrics.totalTime = metrics.totalTime || clientTime;
+          updateMetrics(metrics);
+          
+          log(`Response received in ${clientTime}ms (TTFT: ${metrics.ttft}ms)`, 'success');
+        }
+      } catch (error) {
+        log(`Request failed: ${error.message}`, 'error');
+        addChatMessage(`Error: ${error.message}`, 'system');
+      } finally {
+        document.getElementById('sendBtn').disabled = false;
+        messageInput.focus();
+      }
+    }
+
+    // Initial health check
+    checkHealth();
+  </script>
+</body>
+</html>
