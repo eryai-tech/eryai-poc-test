@@ -15,6 +15,7 @@ import { getGreeting, getMessages } from './lib/db.js';
 import { healthCheck } from './lib/health.js';
 import { createRequestLogger, createTimer, logError } from './lib/logger.js';
 import { rateLimit } from './lib/rateLimit.js';
+import { runSetup } from './lib/setup.js';
 
 const PORT = process.env.PORT || 8080;
 
@@ -88,6 +89,39 @@ async function handleRequest(req, res) {
       }, `◀ ${path} ${statusCode} (${requestTimer.elapsed()}ms)`);
       
       return res.end(JSON.stringify(result));
+    }
+
+    // ============================================
+    // POST /api/setup - Database setup (run once)
+    // ============================================
+    if (path === '/api/setup' && req.method === 'POST') {
+      logger.info({ event: 'SETUP_START' }, '🔧 Running database setup...');
+      
+      try {
+        const result = await runSetup();
+        
+        if (result.success) {
+          logger.info({ event: 'SETUP_SUCCESS', results: result.results }, '✅ Setup complete');
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({
+            success: true,
+            message: 'Database setup complete!',
+            results: result.results
+          }));
+        } else {
+          logger.error({ event: 'SETUP_FAILED', error: result.error }, '❌ Setup failed');
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({
+            success: false,
+            error: result.error,
+            results: result.results
+          }));
+        }
+      } catch (error) {
+        logger.error({ event: 'SETUP_ERROR', error: error.message }, '❌ Setup error');
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: error.message }));
+      }
     }
 
     // ============================================
@@ -288,6 +322,7 @@ server.listen(PORT, () => {
     console.log('');
     console.log('Endpoints:');
     console.log(`  GET  /health              - Health check`);
+    console.log(`  POST /api/setup           - Initialize database`);
     console.log(`  GET  /api/greeting?slug=  - Get customer greeting`);
     console.log(`  GET  /api/messages?sessionId= - Get session messages`);
     console.log(`  POST /api/chat            - Chat with AI`);
